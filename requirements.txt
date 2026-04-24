@@ -1,5 +1,9 @@
 librosa
 numpy
 pandas
-scikit-learn
+scikit-learn==1.8.0
 soundfile
+streamlit
+sounddevice
+scipy
+matplotlib

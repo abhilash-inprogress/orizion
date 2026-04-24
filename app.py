@@ -1,7 +1,12 @@
 # app.py
 
 import streamlit as st
-import sounddevice as sd
+try:
+    import sounddevice as sd
+    HAS_SD = True
+except Exception:
+    HAS_SD = False
+
 from scipy.io.wavfile import write
 import tempfile
 import pickle
@@ -31,7 +36,8 @@ def load_model():
     try:
         with open("models/voice_model.pkl", "rb") as f:
             return pickle.load(f)
-    except:
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
         return None
 
 model = load_model()
@@ -49,17 +55,23 @@ audio_path = None
 with col1:
     duration = st.slider("Recording Duration (sec)", 3, 15, 5)
 
-    if st.button("🎤 Record Audio"):
-        fs = 16000
-        st.info("Recording...")
-        recording = sd.rec(int(duration * fs), samplerate=fs, channels=1)
-        sd.wait()
+    if HAS_SD:
+        if st.button("🎤 Record Audio"):
+            try:
+                fs = 16000
+                st.info("Recording...")
+                recording = sd.rec(int(duration * fs), samplerate=fs, channels=1)
+                sd.wait()
 
-        temp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-        write(temp.name, fs, recording)
+                temp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+                write(temp.name, fs, recording)
 
-        audio_path = temp.name
-        st.audio(temp.name)
+                audio_path = temp.name
+                st.audio(temp.name)
+            except Exception as e:
+                st.error(f"Recording failed: {e}")
+    else:
+        st.warning("Recording is disabled (Sound device not found). This is common on cloud deployments.")
 
 with col2:
     uploaded = st.file_uploader("Upload Audio", type=["wav", "mp3", "ogg", "m4a"])
